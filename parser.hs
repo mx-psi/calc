@@ -84,12 +84,12 @@ outBrackets ys@(x:xs)
 
 anyBrackets :: String -> Bool
 -- Checks if there are any (matching) brackets
-anyBrackets = isNothing . outBrackets
+anyBrackets = isJust . outBrackets
 
 coordsList :: String -> [(Int,Int)]
 -- Returns list of outermost brackets
 coordsList ys
-  | anyBrackets ys = []
+  | not (anyBrackets ys) = []
   | otherwise      = (s,e):(map (add (e+1)) (coordsList (drop (e+1) ys)))
     where Just (s,e) = outBrackets ys
 
@@ -108,7 +108,7 @@ substitute sub rep val  = if (sub == val) then rep else val
 substituteList :: [(Expression, Expression)] -> Expression -> Expression
 -- Replaces list of expressions in order.
 substituteList  [] = id
-substituteList ((sub,rep):xs) = substituteList xs . substitute sub rep 
+substituteList ((sub,rep):xs) = substituteList xs . substitute sub rep
 
 fromString :: [String] -> String -> Expression
 -- Converts string to expression given list of binary operations

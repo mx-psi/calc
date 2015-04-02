@@ -37,7 +37,8 @@ binOp = binOp' binOps
 ---- Basic list functions ----
 
 slice :: (Int, Int) -> [a] -> [a]
--- Returns slice of lists between indices
+-- Returns slice of lists between indices.
+-- Uncurry version to simplify calls using outBrackets
 slice (from,to) _ | to < from = []
 slice (from,to) xs = take (to - from + 1 :: Int) (drop from xs)
 
@@ -58,17 +59,15 @@ replaceList ((sub,rep):xs) ys = replaceList xs (replace sub rep ys)
 -- Removes brackets
 removeBrackets ys = slice (1,(length ys)-2) ys
 
--- Adds n to duple
-add n (f,s) = (f+n,s+n) -- Used by outBrackets
+-- Adds n to pair
+add n (f,s) = (f+n,s+n)
 
 ---- Brackets handling ----
 
 paren :: Int -> String -> Int
-paren n []
-    | n /= 0 = error "paren: brackets mismatching"
-    | n == 0 = 0
+paren 0 _  = 0
+paren _ [] = error "paren: brackets mismatching"
 paren n (x:xs)
-    | n == 0    = 0
     | x == '('  = 1 + paren (n+1) xs
     | x == ')'  = 1 + paren (n-1) xs
     | otherwise = 1 + paren n xs
@@ -87,7 +86,7 @@ coordsList :: String -> [(Int,Int)]
 coordsList ys
     | outBrackets ys == Nothing = []
     | otherwise                 = (s,e):(map (add (e+1)) (coordsList (drop (e+1) ys)))
-        where Just (s,e) = outBrackets ys
+      where Just (s,e) = outBrackets ys
 
 bracketsList ys = sortBy (compare `on` ((0-) . length)) (map (flip slice ys) (coordsList ys))
 

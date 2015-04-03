@@ -10,26 +10,13 @@ instance Show Expression where
   show (Val x)      = show x
   show (Op op list) = "(" ++ intercalate (" "++op++" ") (map show list) ++ ")"
 
----- Basic functions ----
-
-slice :: (Int, Int) -> [a] -> [a]
--- Returns slice of lists between indices.
--- Uncurry version to simplify calls
-slice (from,to) | to < from = \_ -> []
-slice (from,to) = take (to - from + 1 :: Int) . drop from
-
--- Removes brackets
-removeBrackets ys = slice (1,(length ys)-2) ys
-
--- Adds n to pair
-add n (f,s) = (f + n, s + n)
 
 ---- Functions for replacing ----
 
 replace :: Eq a => [a] -> [a] -> [a] -> [a]
 -- Replaces sublist in list
 replace [] _ ys = ys
-replace _ _ [] = []
+replace  _ _ [] = []
 replace sub rep ys@(x:xs)
   |not (sub `isInfixOf` ys) = ys
   |sub `isPrefixOf` ys      = rep ++ replace sub rep (drop (length sub) ys)
@@ -56,22 +43,26 @@ substituteList = applyAssoc substitute
 
 ---- Brackets handling ----
 
+add n (f,s) = (f + n, s + n)
+
+valChar :: Char ->Int
+-- Assigns value to each char
+valChar '(' =  1
+valChar ')' = -1
+valChar  _  =  0
+
 paren :: Int -> String -> Int
-paren 0 _  = 0
-paren _ [] = error "paren: brackets mismatching"
-paren n (x:xs)
-  | x == '('  = 1 + paren (n+1) xs
-  | x == ')'  = 1 + paren (n-1) xs
-  | otherwise = 1 + paren n xs
+-- Returns index of closing bracket.
+paren 0    _   = 0
+paren _    []  = error "paren: Mismatch"
+paren n (x:xs) = 1 + paren (n + valChar x) xs
 
 outBrackets :: String -> Maybe (Int,Int)
 -- Returns indices of the first outermost brackets
-outBrackets ""            = Nothing
-outBrackets ys@(x:xs)
+outBrackets ys
   | not ('(' `elem` ys) = Nothing
-  | x == '('            = Just (0, paren 1 xs)
-  | otherwise           = Just (add 1(a, b))
-      where Just (a,b)  = outBrackets xs
+outBrackets ('(':xs)  = Just (0, paren 1 xs)
+outBrackets ( _:xs )  = liftM (add 1) (outBrackets xs)
 
 anyBrackets :: String -> Bool
 -- Checks if there are any (matching) brackets
@@ -84,41 +75,66 @@ coordsList ys
   | otherwise      = (s,e):(map (add (e+1)) (coordsList (drop (e+1) ys)))
     where Just (s,e) = outBrackets ys
 
-bracketsList ys = sortBy (comparing (Down . length)) (map (flip slice ys) (coordsList ys))
+removeBrackets :: String -> String
+-- Removes brackets. Unsafe
+removeBrackets = tail . init
 
-aux = map (\c->'_':[c]) ['A'..] -- Auxiliary variables to replace brackets
+slice :: [a] -> (Int, Int) -> [a]
+-- Gets slice of list. Uncurry to simplify calls
+slice ys (from,to) = take (to - from + 1) (drop from ys)
+
+bracketsList :: String -> [String]
+-- Gets brackets content list sorted by length
+bracketsList ys = sortBy (comparing (Down . length)) (map (slice ys) (coordsList ys))
+
 
 ---- Expression data type related functions ----
 
 isNum :: String -> Bool
+-- Tells if string is a readable Double
 isNum = all (`elem` ".-0123456789")
 
-fromString :: [String] -> String -> Expression
--- Converts string to expression given list of binary operations
-fromString _ "" = Val 0
-fromString opl@(op:ops) ys
-  | anyBrackets ys   =
-    let bs     = bracketsList ys
-        expBs  = map (fromString opl . removeBrackets) bs
-        expAux = map Var aux
-    in substituteList (zip expAux expBs) (fromString opl (replaceList (zip bs aux) ys))
-  | op `isInfixOf` ys = Op op (map (fromString ops) (replace [""] [] (splitOn op ys)))
-  | otherwise         = fromString ops ys
+-- Auxiliary variables and expressions
+aux = map (\c->'_':[c]) ['A'..]
+expAux = map Var aux
 
-fromString [] ys
+parse :: [String] -> String -> Expression
+-- Parses string given list of binary operations
+
+-- Base cases
+parse _ "" = Val 0
+parse [] ys
   | isNum ys  = Val (read ys :: Double)
   | otherwise = Var ys
 
+-- Brackets parsing
+parse opl ys
+  | anyBrackets ys   =
+    let bs     = bracketsList ys -- String content of brackets
+        expBs  = map (parse opl . removeBrackets) bs -- Parsed contents
+    in substituteList (zip expAux expBs) (parse opl (replaceList (zip bs aux) ys))
+
+-- Ops parsing
+parse (op:ops) ys
+  | op `isInfixOf` ys = Op op (map (parse ops) (replace [""] [] (splitOn op ys)))
+  | otherwise         = parse ops ys
+
 ---- Operations and related functions ----
 
+operators :: [(String, Double -> Double -> Double)]
 -- Symbols and related functions, ordered by precedence
-ops = [("+",(+)), ("*",(*)), ("/",(/)), ("^",(**))]
--- Get associated function. Assumes no failure.
-getOp op = fromJust (lookup op ops)
+operators = [("+",(+)), ("*",(*)), ("/",(/)), ("^",(**))]
 
-readExp = fromString (map fst ops) . replaceList [(" ",""),("-","+-")]
+getOp :: String -> (Double -> Double -> Double)
+-- Get associated function. Assumes no failure.
+getOp op = fromJust (lookup op operators)
 
 value :: Expression -> Maybe Double
+-- Gets numerical value of an expression
 value (Var _)    = Nothing
 value (Val x)    = Just x
 value (Op op ys) = liftM (foldr1 (getOp op)) (mapM value ys)
+
+readExp = parse (map fst operators) . replaceList [(" ",""),("-","+-")]
+calc = value . readExp
+main = getLine >>= print . calc

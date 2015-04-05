@@ -20,17 +20,17 @@ replace  _ _ [] = []
 replace sub rep ys@(x:xs)
   |not (sub `isInfixOf` ys) = ys
   |sub `isPrefixOf` ys      = rep ++ replace sub rep (drop (length sub) ys)
-  |otherwise                = x:(replace sub rep xs)
+  |otherwise                = x : replace sub rep xs
 
 substitute :: Expression -> Expression -> Expression -> Expression
 -- Replaces Expressions
 substitute sub rep (Op op ys)
-  | sub /= (Op op ys) = Op op (map (substitute sub rep) ys)
-substitute sub rep val  = if (sub == val) then rep else val
+  | sub /= Op op ys = Op op (map (substitute sub rep) ys)
+substitute sub rep val  = if sub == val then rep else val
 
 applyAssoc  :: (a -> a -> a -> a) -> [(a, a)] -> a -> a
 -- Compose a function applied to elements of a list
-applyAssoc f = foldl (.) id . map (\(s,r) -> f s r)
+applyAssoc f = foldl (.) id . map (uncurry f)
 
 replaceList :: (Eq a) => [([a],[a])] -> [a] -> [a]
 -- Replaces in given order each pair of sublists in list
@@ -60,7 +60,7 @@ paren n (x:xs) = 1 + paren (n + valChar x) xs
 outBrackets :: String -> Maybe (Int,Int)
 -- Returns indices of the first outermost brackets
 outBrackets ys
-  | not ('(' `elem` ys) = Nothing
+  | '(' `notElem` ys  = Nothing
 outBrackets ('(':xs)  = Just (0, paren 1 xs)
 outBrackets ( _:xs )  = liftM (add 1) (outBrackets xs)
 
@@ -72,7 +72,7 @@ coordsList :: String -> [(Int,Int)]
 -- Returns list of outermost brackets
 coordsList ys
   | not (anyBrackets ys) = []
-  | otherwise      = (s,e):(map (add (e+1)) (coordsList (drop (e+1) ys)))
+  | otherwise      = (s,e) : map (add (e+1)) (coordsList (drop (e+1) ys))
     where Just (s,e) = outBrackets ys
 
 removeBrackets :: String -> String

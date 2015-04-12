@@ -1,5 +1,4 @@
 import Data.List
-import Control.Monad
 import Data.Maybe
 import Data.Ord
 import Data.List.Split (splitOn)
@@ -62,7 +61,7 @@ outBrackets :: String -> Maybe (Int,Int)
 outBrackets ys
   | '(' `notElem` ys  = Nothing
 outBrackets ('(':xs)  = Just (0, paren 1 xs)
-outBrackets ( _:xs )  = liftM (add 1) (outBrackets xs)
+outBrackets ( _:xs )  = fmap (add 1) (outBrackets xs)
 
 anyBrackets :: String -> Bool
 -- Checks if there are any (matching) brackets
@@ -123,7 +122,7 @@ parse (op:ops) ys
 
 operators :: [(String, Double -> Double -> Double)]
 -- Symbols and related functions, ordered by precedence
-operators = [("+",(+)), ("*",(*)), ("/",(/)), ("^",(**))]
+operators = [("+",(+)), ("*",(*)), ("/",(/)), ("^",(**)), ("-", (-))]
 
 getOp :: String -> (Double -> Double -> Double)
 -- Get associated function. Assumes no failure.
@@ -133,8 +132,8 @@ value :: Expression -> Maybe Double
 -- Gets numerical value of an expression
 value (Var _)    = Nothing
 value (Val x)    = Just x
-value (Op op ys) = liftM (foldr1 (getOp op)) (mapM value ys)
+value (Op op ys) = fmap (foldl1' (getOp op)) (mapM value ys)
 
-readExp = parse (map fst operators) . replaceList [(" ",""),("-","+-")]
+readExp = parse (map fst operators) . filter (/=' ')
 calc = value . readExp
 main = getLine >>= print . calc

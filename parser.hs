@@ -122,7 +122,7 @@ parse (op:ops) ys
 
 operators :: [(String, Double -> Double -> Double)]
 -- Symbols and related functions, ordered by precedence
-operators = [("+",(+)), ("*",(*)), ("/",(/)), ("^",(**)), ("-", (-))]
+operators = [("-", (-)), ("+",(+)), ("/",(/)), ("*",(*)), ("^",(**))]
 
 getOp :: String -> (Double -> Double -> Double)
 -- Get associated function. Assumes no failure.

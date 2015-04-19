@@ -22,12 +22,12 @@ value (Node a  [])
   | otherwise = Left  $ "Unknown expression: " ++ a
 
 value (Node f [x])
-  | isJust f' = fmap (fromJust $ f') (value x)
+  | isJust f' = fmap (fromJust f') (value x)
   | otherwise = Left $ "Unknown function: " ++ f
     where f'  = lookup f unaryFun
 
 value (Node op ys)
-  | isJust op' = fmap (foldl1 (fromJust $ op')) (mapM value ys)
+  | isJust op' = fmap (foldl1 (fromJust op')) (mapM value ys)
   | otherwise  = Left $ "Unknown operator: " ++ op
     where op'  = lookup op operators
 

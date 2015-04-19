@@ -4,7 +4,7 @@ import Data.List (isInfixOf, isPrefixOf)
 import Data.List.Split (splitOn)
 import Data.Tree
 
----- Functions for replacing ----
+{- Functions for replacing -}
 
 replace :: Eq a => [a] -> [a] -> [a] -> [a]
 -- Replaces sublist in list
@@ -32,7 +32,7 @@ substituteList :: Eq a => [(Tree a, Tree a)] -> Tree a -> Tree a
 -- Replaces list of Trees in order.
 substituteList = compose substitute
 
----- Brackets ----
+{- Brackets -}
 
 add n (f, s) = (f + n, s + n)
 
@@ -62,7 +62,7 @@ slice :: [a] -> (Int, Int) -> [a]
 -- Slice of list. Uncurry to simplify calls
 slice ys (from, to) = take (to - from + 1) (drop from ys)
 
----- Parsing ----
+{- Parsing -}
 
 -- Auxiliary variables and Trees
 aux    = map (\ c -> '_' : c : "_") ['A' ..]

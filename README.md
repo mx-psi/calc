@@ -1,5 +1,27 @@
 # Calc
 
-A basic math expressions parser. I tried to do this project when I started learning Haskell without looking at any standard solution or caring too much about efficiency. I have improved some bits so that is easier to understand.
+A basic math expressions parser. I tried to do this project when I started learning Haskell without looking at any standard solution or caring too much about efficiency and I'm trying to improve it now.
 
-Currently it can parse any expression with basic arithmetic operations (+, -, /, \*) applied to numbers and variables. A variable is any string which is not numeric. Variables starting with `_` are reserved for brackets substitution. It can be easily extended to work with other binary operations.
+It transforms `((1 + x) * (y / 9) + 7) * 2` to:
+
+```
+					 *        
+					 |        
+					 -------- 
+					/        \
+					+        2
+					|         
+				  -------    
+				 /       \   
+				 *       7   
+				 |           
+			  -----         
+			 /     \        
+			 +     /        
+			 |     |        
+			 --    --       
+			/  \  /  \      
+			1  x  y  9      
+```
+
+Underscores (`_`) are reserved.

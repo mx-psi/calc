@@ -18,16 +18,16 @@ value :: Tree String -> Either String Double
 -- Gets numerical value of an expression
 value (Node a  [])
   | isNum a   = Right $ read a
-  | otherwise = Left  $ "Unknown expression: " ++ a
+  | otherwise = Left  $ "Unknown expression \"" ++ a ++ "\""
 
 value (Node f [x])
   | isJust f' = fmap (fromJust f') (value x)
-  | otherwise = Left $ "Unknown function: " ++ f
+  | otherwise = Left $ "Unknown function \"" ++ f ++ "\""
     where f'  = lookup f functions
 
 value (Node op ys)
   | isJust op' = fmap (foldl1 (fromJust op')) (mapM value ys)
-  | otherwise  = Left $ "Unknown operator: " ++ op
+  | otherwise  = Left $ "Unknown operator \"" ++ op ++ "\""
     where op'  = lookup op operators
 
 readExp = parse (map fst operators) . filter (/= ' ')
@@ -36,4 +36,4 @@ calc = value . readExp
 main = do
         expr <- getLine
         putStrLn $ drawVerticalTree $ readExp expr
-        print $ calc expr
+        putStrLn $ either ("Can't evaluate: "++) show $ calc expr
